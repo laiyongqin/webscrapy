@@ -1,0 +1,6 @@
+.classpath
+.project
+.settings/
+*.pyc
+**/.DS_Store
+.pydevproject
