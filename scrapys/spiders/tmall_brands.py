@@ -6,6 +6,7 @@ import json
 import urllib2
 import io
 from scrapys.items import TmallBrand
+from scrapy.contrib.exporter import XmlItemExporter
 
 class TmallBrandsSpider(scrapy.Spider):
     name = 'tmallbrands'
@@ -15,12 +16,23 @@ class TmallBrandsSpider(scrapy.Spider):
                  'callback': '1'
                  }
     f = io.open("myfile.tsv", "w+", encoding="utf8")
-    needZiZhaoImg = True
+    needZiZhaoImg = False
+    exporter = XmlItemExporter(file)
     
     def __init__(self, category=None, *args, **kwargs):
-        self.loginform['TPL_username'] = raw_input("username:")
-        self.loginform['TPL_password'] = raw_input("username:")
+        self.loginform['TPL_username'] = '13817166196'
+        self.loginform['TPL_password'] = 'Blissjiaf0104$%'
         print self.loginform
+
+    def spider_opened(self, spider):
+    	file = open('tmall_brands.csv', 'wb+')
+    	
+    	self.exporter.start_exporting()
+
+    def spider_closed(self, spider):
+        self.exporter.finish_exporting()
+        file.close()
+
     
     def start_requests(self):
         print "=="*10+" step 1 " + "="*10
@@ -65,7 +77,7 @@ class TmallBrandsSpider(scrapy.Spider):
         status = response.getcode()
         picData = response.read()
         
-        path = "/Users/Owen/checkcode.jpg"
+        path = "/home/owen/checkcode.jpg"
         if status == 200:
             localPic = open(path, "wb+")
             localPic.write(picData)
@@ -122,7 +134,7 @@ class TmallBrandsSpider(scrapy.Spider):
         shopName = response.xpath('//a[@class="slogo-shopname"]/strong/text()').extract()[0]
         tmallBrand['shopName'] = shopName
         shopTemp = shopInfo.xpath('.//div[contains(@class, "extend")]/ul')
-        #tmallBrand['shopBrand'] = response.xpath('//a[contains(@class, "shop-logo")]/span/text()').extract()[0].strip()
+        shopRateUrl = response.xpath('//li[@class="shopkeeper"]//a/@href').extract()[0].strip()
         tmallBrand['companyName'] = shopTemp.xpath('./li[3]/div/text()').extract()[0].strip()
         tmallBrand['shopLocation'] = shopTemp.xpath('./li[4]/div/text()').extract()[0].strip()
         tmallBrand['wangwangUrl'] = "http://amos.alicdn.com/getcid.aw?spm=a1z10.1-b.1997427721.6.TW1mHd&v=3&site=cntaobao&groupid=0&s=1&uid=%s"%shopName
@@ -140,18 +152,29 @@ class TmallBrandsSpider(scrapy.Spider):
         else:
             shopType = "其它"
         tmallBrand['shopType'] = shopType
+
+        print "shopRateUrl:" + shopRateUrl
+        yield scrapy.Request(shopRateUrl, callback=self.fetch_rate, meta=dict(tmallBrand=tmallBrand))
         
         if self.needZiZhaoImg == True and len(ziZhaoUrl) > 0:
             xid = re.search("xid=(.*)$", ziZhaoUrl).group(1)
             yield scrapy.Request(ziZhaoUrl, callback=self.fetch_ziZhaoImg, meta=dict(xid=xid, shopName=shopName))
         
-        print tmallBrand
-        #self.f.write(string)
-        #self.f.flush()
         print "end write"
+
+    def fetch_rate(self, response):
+        print "=="*10+" step 9 " + "="*10 + "start"
+    	tmallBrand = response.meta['tmallBrand']
+    	category = response.xpath('//li[@class="company"]/../li[2]/a/text()').extract()[0].strip()
+    	tradeCount = response.xpath('//div[@class="total"]/span[last()]/text()').extract()[0]
+    	tmallBrand['category'] = category
+    	tmallBrand['tradeCount'] = tradeCount
+        print tmallBrand
+        yield tmallBrand
+
     
     def fetch_ziZhaoImg(self, response):
-        print "=="*10+" step 9 " + "="*10 + "start"
+        print "=="*10+" step 10 " + "="*10 + "start"
         shopName = response.meta['shopName']
         xid = response.meta['xid']
         tbtoken = response.xpath('//input[@name="_tb_token_"]/@value').extract()[0]
@@ -161,7 +184,7 @@ class TmallBrandsSpider(scrapy.Spider):
         yield scrapy.Request(url, callback=self.save_ziZhaoImg, meta=dict(shopName=shopName))
     
     def save_ziZhaoImg(self, response):
-        print "=="*10+" step 10 " + "="*10 + "start"
+        print "=="*10+" step 11 " + "="*10 + "start"
         shopName = response.meta['shopName']
         imgNode = response.xpath('//div[@class="box-item img-box"]//img/@src').extract()
         if len(imgNode) > 0:
@@ -175,7 +198,7 @@ class TmallBrandsSpider(scrapy.Spider):
         print "imgUrl:%s"%imgUrl
         req = urllib2.Request(imgUrl)
         res = urllib2.urlopen(req)
-        fileName = "/Users/owen/Tmall/" + shopName + '.png'
+        fileName = "/home/owen/Tmall/" + shopName + '.png'
         f = open(fileName, 'wb+')
         f.write(res.read())
         f.close()
