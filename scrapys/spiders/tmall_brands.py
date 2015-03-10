@@ -20,8 +20,8 @@ class TmallBrandsSpider(scrapy.Spider):
     exporter = XmlItemExporter(file)
     
     def __init__(self, category=None, *args, **kwargs):
-        self.loginform['TPL_username'] = '13817166196'
-        self.loginform['TPL_password'] = 'Blissjiaf0104$%'
+        self.loginform['TPL_username'] = raw_input("username:")
+        self.loginform['TPL_password'] = raw_input("password:")
         print self.loginform
 
     def spider_opened(self, spider):
