@@ -93,14 +93,46 @@ class TmallBrandsSpider(scrapy.Spider):
         print "=="*10+" step 4 " + "="*10
         # be 5
         for i in range(1): #TODO
-            yield scrapy.FormRequest("http://sell.tmall.com/auction/goods/goods_on_sale.htm", formdata={"page": str(i+1)}, callback=self.parse_brandsIndex)
-    
-    def parse_brandsIndex(self, response):
+            yield scrapy.FormRequest("http://sell.tmall.com/auction/goods/goods_on_sale.htm", formdata={"page": str(i+1)}, callback=self.parse_brandsStart)
+
+    def parse_brandsStart(self, response):
         print "=="*10+" step 5 " + "="*10
-        for i in range(65,90):
-            yield scrapy.Request("http://brand.tmall.com/azIndexInside.htm?firstLetter=%s"%chr(i), callback=self.parse_page)
+        yield scrapy.Request("http://brand.tmall.com/categoryIndex.htm", callback=self.parse_brandsIndex)
+        #for i in range(65,90):
+        #    yield scrapy.Request("http://brand.tmall.com/azIndexInside.htm?firstLetter=%s"%chr(i), callback=self.parse_zaIndexpage)
     
-    def parse_page(self, response):
+    # 服装服饰这个层级 Tab
+    def parse_brandsIndex(self, response):
+        print "=="*10+" step 5.1 " + "="*10
+        industryList = response.xpath('//ul[contains(@class, "brandTab")]//a/@href').extract()
+        for industryUrl in industryList:
+            yield scrapy.Request(industryUrl, callback=self.parse_industryPage)
+
+    # 类目
+    def parse_industryPage(self, response):
+        print "=="*10+" step 5.2 " + "="*10
+        urlList = response.xpath('//dl[contains(@class, "cf-catList")]//a/@href').extract()
+        for url in urlList:
+            yield scrapy.Request(url, callback=self.parse_industryPagePagination)
+
+    # 类目分页
+    def parse_industryPagePagination(self, response):
+        print "=="*10+" step 5.3 " + "="*10
+        pageText = response.xpath('//b[@class="ui-page-s-len"]').extract()[0]
+        pages = int(re.search('\/(\d+)', pageText).group(1))
+        print "==============pages:" + str(pages)
+        for p in range(pages):
+            print "request url" + response.request.url
+            yield scrapy.FormRequest(response.request.url, formdata={"page": str(p+1)}, callback=self.parse_brandList)
+
+    # 类目中的品牌列表
+    def parse_brandList(self, response):
+        print "=="*10+" step 5.4 " + "="*10
+        shopUrlList = response.xpath('//p[@class="bIi-brand-logo"]/a/@href').extract()
+        for shopUrl in shopUrlList:
+            yield scrapy.Request(shopUrl, callback=self.parse_brand)
+
+    def parse_zaIndexpage(self, response):
         print "=="*10+" step 6 " + "="*10 + "start"
         #print response.body
         #print "=="*10+" step 6 " + "="*10 + "end"
@@ -131,7 +163,9 @@ class TmallBrandsSpider(scrapy.Spider):
         tmallBrand = response.meta['tmallBrand']
         print response.encoding
         shopInfo = response.xpath('//div[@id="shop-info"]')
+        shopUrl = response.xpath('//a[@class="slogo-shopname"]/@href').extract()[0]
         shopName = response.xpath('//a[@class="slogo-shopname"]/strong/text()').extract()[0]
+        tmallBrand['shopUrl'] = shopUrl
         tmallBrand['shopName'] = shopName
         shopTemp = shopInfo.xpath('.//div[contains(@class, "extend")]/ul')
         shopRateUrl = response.xpath('//li[@class="shopkeeper"]//a/@href').extract()[0].strip()

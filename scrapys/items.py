@@ -19,6 +19,7 @@ class ProdItem(scrapy.Item):
 
 class TmallBrand(scrapy.Item):
     # 主营业务
+    shopUrl = scrapy.Field()
     category = scrapy.Field()
     brandName = scrapy.Field()
     shopName = scrapy.Field()
@@ -29,5 +30,3 @@ class TmallBrand(scrapy.Item):
     tradeCount = scrapy.Field()
     # 营业执照链接
     ziZhaoUrl = scrapy.Field()
-    
-    
