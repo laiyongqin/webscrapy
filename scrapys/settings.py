@@ -16,3 +16,12 @@ NEWSPIDER_MODULE = 'scrapys.spiders'
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36'
 COOKIES_DEBUG = False
+
+DOWNLOADER_MIDDLEWARES = {
+    #'scrapy.contrib.downloadermiddleware.httpproxy.HttpProxyMiddleware': 110,
+    #'scrapys.proxy.ProxyMiddleware': 100,
+}
+
+ITEM_PIPELINES = {
+    #'scrapys.pipelines.ScrapysPipeline': 100                  
+}

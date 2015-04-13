@@ -24,16 +24,6 @@ class TmallBrandsSpider(scrapy.Spider):
         self.loginform['TPL_password'] = raw_input("password:")
         print self.loginform
 
-    def spider_opened(self, spider):
-    	file = open('tmall_brands.csv', 'wb+')
-    	
-    	self.exporter.start_exporting()
-
-    def spider_closed(self, spider):
-        self.exporter.finish_exporting()
-        file.close()
-
-    
     def start_requests(self):
         print "=="*10+" step 1 " + "="*10
         yield scrapy.FormRequest("https://login.taobao.com/member/login.jhtml",
@@ -97,9 +87,9 @@ class TmallBrandsSpider(scrapy.Spider):
 
     def parse_brandsStart(self, response):
         print "=="*10+" step 5 " + "="*10
-        yield scrapy.Request("http://brand.tmall.com/categoryIndex.htm", callback=self.parse_brandsIndex)
-        #for i in range(65,90):
-        #    yield scrapy.Request("http://brand.tmall.com/azIndexInside.htm?firstLetter=%s"%chr(i), callback=self.parse_zaIndexpage)
+        #yield scrapy.Request("http://brand.tmall.com/categoryIndex.htm", callback=self.parse_brandsIndex)
+        for i in range(65,90):
+            yield scrapy.Request("http://brand.tmall.com/azIndexInside.htm?firstLetter=%s"%chr(i), callback=self.parse_zaIndexpage)
     
     # 服装服饰这个层级 Tab
     def parse_brandsIndex(self, response):
@@ -206,7 +196,6 @@ class TmallBrandsSpider(scrapy.Spider):
         print tmallBrand
         yield tmallBrand
 
-    
     def fetch_ziZhaoImg(self, response):
         print "=="*10+" step 10 " + "="*10 + "start"
         shopName = response.meta['shopName']

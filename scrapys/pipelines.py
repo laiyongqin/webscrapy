@@ -5,7 +5,12 @@
 # Don't forget to add your pipeline to the ITEM_PIPELINES setting
 # See: http://doc.scrapy.org/en/latest/topics/item-pipeline.html
 
+import json
 
 class ScrapysPipeline(object):
     def process_item(self, item, spider):
+        fd = open("result.json", 'a')
+        line = json.dumps(item) + '\n'
+        fd.write(line)
+        fd.close
         return item
