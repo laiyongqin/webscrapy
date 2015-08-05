@@ -17,8 +17,15 @@ class ProdItem(scrapy.Item):
     category = scrapy.Field()
     attrs = scrapy.Field()
     skus = scrapy.Field()
-
+    
 class TmallBrand(scrapy.Item):
+    brandId = scrapy.Field()
+    name = scrapy.Field()
+    sourcePlace = scrapy.Field()
+    createYear = scrapy.Field()
+    brandStory = scrapy.Field()
+
+class TmallShop(scrapy.Item):
     # 主营业务
     shopUrl = scrapy.Field()
     category = scrapy.Field()
