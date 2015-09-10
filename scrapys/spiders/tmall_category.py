@@ -12,9 +12,9 @@ class TmallCategorySpider(scrapy.Spider):
     name = 'tmallcategory'
     download_delay = 1
     start_urls = ['http://www.taobao.com']
-    ocat = list()               
-    pcatId = set()
-    f2_1 = open("propIds.txt", "a+")
+    needCrawlCats = list()    
+    crawledCids = set()
+    cacheIdFile = open("propIds.txt", "a+")
     f2 = open("props2.txt", "a")
     f3 = open("propValues2.txt", "a")
     def __init__(self, category=None, *args, **kwargs):
@@ -23,21 +23,21 @@ class TmallCategorySpider(scrapy.Spider):
         if len(text) > 0:
             ocat1 = json.loads(text)
             for cat in ocat1:
-                self.ocat.append(cat)
+                self.needCrawlCats.append(cat)
                 
         print "reading prop Ids"
-        props = self.f2_1.readlines()
+        props = self.cacheIdFile.readlines()
         for prop in props:
-            self.pcatId.add(int(prop))
+            self.crawledCids.add(int(prop))
             
     def start_requests(self):
         print "=="*10+" step 1 " + "="*10
         #yield Request("http://api.taobao.com/apitools/apiPropTools.htm", callback=self.parse_page)
-        print len(self.pcatId)
-        for cat in self.ocat:
+        print len(self.crawledCids)
+        for cat in self.needCrawlCats:
             cid = cat["cid"]
             is_parent = cat["is_parent"]
-            if is_parent == False and cid not in self.pcatId:
+            if is_parent == False and cid not in self.crawledCids:
                 url = "http://api.taobao.com/apitools/ajax_props.do?act=props&cid=%s&restBool=false"%cid
                 yield Request(url, callback=self.parse_attribute, meta=dict(pcid=cid))
             else:
@@ -124,7 +124,7 @@ class TmallCategorySpider(scrapy.Spider):
             return
 
         print "write parent cid to cache file"
-        self.f2_1.write(str(pcid) + "\n")
+        self.cacheIdFile.write(str(pcid) + "\n")
         if rlen == 94:
             print "not valid result found, write empty content"
             self.f2.write('{"cid": %s, "value": []},\n'%(pcid))
@@ -180,7 +180,7 @@ class TmallCategorySpider(scrapy.Spider):
         # f1.close()
         self.f2.close()
         self.f3.close()
-        self.f2_1.close()
+        self.cacheIdFile.close()
 
     def format_exception(self, e):
         exception_list = traceback.format_stack()
